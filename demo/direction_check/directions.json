@@ -1,0 +1,788 @@
+[
+  {
+    "input": {
+      "h": 0.0,
+      "v": 0.0
+    },
+    "eye_rotation_L": [
+      -4.7475,
+      -0.0776,
+      -11.4531
+    ],
+    "eye_rotation_R": [
+      -5.0048,
+      0.0697,
+      11.1756
+    ],
+    "pupil_center_2D_L": [
+      657.297,
+      409.6
+    ],
+    "pupil_center_2D_R": [
+      366.703,
+      409.601
+    ],
+    "camera_matrix": [
+      [
+        1991.1111,
+        0.0,
+        512.0
+      ],
+      [
+        0.0,
+        1991.1111,
+        409.6
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "camera_extrinsic_world_to_cam": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0,
+        1.620579
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.525778
+      ]
+    ],
+    "projection_matrix": [
+      [
+        1991.1111,
+        512.0,
+        0.0,
+        269.1985
+      ],
+      [
+        0.0,
+        409.6001,
+        -1991.1111,
+        3442.1126
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.5258
+      ]
+    ],
+    "pupil_center_3D_L": [
+      0.028206,
+      -0.139246,
+      1.620579
+    ],
+    "eye_center_3D_L": [
+      0.029335,
+      -0.125778,
+      1.620579
+    ],
+    "gaze_dir_L": [
+      -0.083522,
+      -0.996506,
+      0.0
+    ],
+    "gaze_yaw_pitch_deg_L": [
+      -4.791,
+      0.0
+    ],
+    "pupil_center_3D_R": [
+      -0.028206,
+      -0.139244,
+      1.620579
+    ],
+    "eye_center_3D_R": [
+      -0.029335,
+      -0.125778,
+      1.620579
+    ],
+    "gaze_dir_R": [
+      0.083522,
+      -0.996506,
+      0.0
+    ],
+    "gaze_yaw_pitch_deg_R": [
+      4.791,
+      0.0
+    ],
+    "fixation_target_3D": [
+      -0.0,
+      -0.475778,
+      1.620579
+    ],
+    "units": {
+      "rotation": "degrees, XYZ Euler, world frame",
+      "3D": "metres, Blender world (Z up, face looks -Y)",
+      "2D": "pixels, origin top-left, x right, y down"
+    },
+    "image": "demo/direction_check/center.png",
+    "name": "center"
+  },
+  {
+    "input": {
+      "h": -1.0,
+      "v": 0.0
+    },
+    "eye_rotation_L": [
+      -4.7865,
+      0.2556,
+      -19.4336
+    ],
+    "eye_rotation_R": [
+      -4.9651,
+      0.4243,
+      3.0058
+    ],
+    "pupil_center_2D_L": [
+      647.62,
+      409.6
+    ],
+    "pupil_center_2D_R": [
+      356.777,
+      409.601
+    ],
+    "camera_matrix": [
+      [
+        1991.1111,
+        0.0,
+        512.0
+      ],
+      [
+        0.0,
+        1991.1111,
+        409.6
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "camera_extrinsic_world_to_cam": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0,
+        1.620579
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.525778
+      ]
+    ],
+    "projection_matrix": [
+      [
+        1991.1111,
+        512.0,
+        0.0,
+        269.1985
+      ],
+      [
+        0.0,
+        409.6001,
+        -1991.1111,
+        3442.1126
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.5258
+      ]
+    ],
+    "pupil_center_3D_L": [
+      0.026347,
+      -0.138959,
+      1.620579
+    ],
+    "eye_center_3D_L": [
+      0.029335,
+      -0.125778,
+      1.620579
+    ],
+    "gaze_dir_L": [
+      -0.221064,
+      -0.975259,
+      0.0
+    ],
+    "gaze_yaw_pitch_deg_L": [
+      -12.7715,
+      0.0
+    ],
+    "pupil_center_3D_R": [
+      -0.030132,
+      -0.139268,
+      1.620579
+    ],
+    "eye_center_3D_R": [
+      -0.029335,
+      -0.125778,
+      1.620579
+    ],
+    "gaze_dir_R": [
+      -0.05894,
+      -0.998262,
+      0.0
+    ],
+    "gaze_yaw_pitch_deg_R": [
+      -3.379,
+      0.0
+    ],
+    "fixation_target_3D": [
+      -0.05,
+      -0.475778,
+      1.620579
+    ],
+    "units": {
+      "rotation": "degrees, XYZ Euler, world frame",
+      "3D": "metres, Blender world (Z up, face looks -Y)",
+      "2D": "pixels, origin top-left, x right, y down"
+    },
+    "image": "demo/direction_check/left.png",
+    "name": "left"
+  },
+  {
+    "input": {
+      "h": 1.0,
+      "v": 0.0
+    },
+    "eye_rotation_L": [
+      -4.7083,
+      -0.4139,
+      -3.2833
+    ],
+    "eye_rotation_R": [
+      -5.0441,
+      -0.2816,
+      19.1562
+    ],
+    "pupil_center_2D_L": [
+      667.225,
+      409.6
+    ],
+    "pupil_center_2D_R": [
+      376.378,
+      409.601
+    ],
+    "camera_matrix": [
+      [
+        1991.1111,
+        0.0,
+        512.0
+      ],
+      [
+        0.0,
+        1991.1111,
+        409.6
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "camera_extrinsic_world_to_cam": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0,
+        1.620579
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.525778
+      ]
+    ],
+    "projection_matrix": [
+      [
+        1991.1111,
+        512.0,
+        0.0,
+        269.1985
+      ],
+      [
+        0.0,
+        409.6001,
+        -1991.1111,
+        3442.1126
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.5258
+      ]
+    ],
+    "pupil_center_3D_L": [
+      0.030132,
+      -0.13927,
+      1.620579
+    ],
+    "eye_center_3D_L": [
+      0.029335,
+      -0.125778,
+      1.620579
+    ],
+    "gaze_dir_L": [
+      0.05894,
+      -0.998262,
+      0.0
+    ],
+    "gaze_yaw_pitch_deg_L": [
+      3.379,
+      0.0
+    ],
+    "pupil_center_3D_R": [
+      -0.026348,
+      -0.138957,
+      1.620579
+    ],
+    "eye_center_3D_R": [
+      -0.029335,
+      -0.125778,
+      1.620579
+    ],
+    "gaze_dir_R": [
+      0.221064,
+      -0.975259,
+      0.0
+    ],
+    "gaze_yaw_pitch_deg_R": [
+      12.7715,
+      0.0
+    ],
+    "fixation_target_3D": [
+      0.05,
+      -0.475778,
+      1.620579
+    ],
+    "units": {
+      "rotation": "degrees, XYZ Euler, world frame",
+      "3D": "metres, Blender world (Z up, face looks -Y)",
+      "2D": "pixels, origin top-left, x right, y down"
+    },
+    "image": "demo/direction_check/right.png",
+    "name": "right"
+  },
+  {
+    "input": {
+      "h": 0.0,
+      "v": 1.0
+    },
+    "eye_rotation_L": [
+      -12.7039,
+      -1.8167,
+      -11.2635
+    ],
+    "eye_rotation_R": [
+      -12.9715,
+      1.751,
+      10.9924
+    ],
+    "pupil_center_2D_L": [
+      657.304,
+      399.791
+    ],
+    "pupil_center_2D_R": [
+      366.696,
+      399.794
+    ],
+    "camera_matrix": [
+      [
+        1991.1111,
+        0.0,
+        512.0
+      ],
+      [
+        0.0,
+        1991.1111,
+        409.6
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "camera_extrinsic_world_to_cam": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0,
+        1.620579
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.525778
+      ]
+    ],
+    "projection_matrix": [
+      [
+        1991.1111,
+        512.0,
+        0.0,
+        269.1985
+      ],
+      [
+        0.0,
+        409.6001,
+        -1991.1111,
+        3442.1126
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.5258
+      ]
+    ],
+    "pupil_center_3D_L": [
+      0.028218,
+      -0.139112,
+      1.622484
+    ],
+    "eye_center_3D_L": [
+      0.029335,
+      -0.125778,
+      1.620579
+    ],
+    "gaze_dir_L": [
+      -0.082688,
+      -0.986559,
+      0.140938
+    ],
+    "gaze_yaw_pitch_deg_L": [
+      -4.791,
+      8.1021
+    ],
+    "pupil_center_3D_R": [
+      -0.028218,
+      -0.13911,
+      1.622484
+    ],
+    "eye_center_3D_R": [
+      -0.029335,
+      -0.125778,
+      1.620579
+    ],
+    "gaze_dir_R": [
+      0.082688,
+      -0.986559,
+      0.140937
+    ],
+    "gaze_yaw_pitch_deg_R": [
+      4.791,
+      8.1021
+    ],
+    "fixation_target_3D": [
+      -0.0,
+      -0.475778,
+      1.670579
+    ],
+    "units": {
+      "rotation": "degrees, XYZ Euler, world frame",
+      "3D": "metres, Blender world (Z up, face looks -Y)",
+      "2D": "pixels, origin top-left, x right, y down"
+    },
+    "image": "demo/direction_check/up.png",
+    "name": "up"
+  },
+  {
+    "input": {
+      "h": 0.0,
+      "v": -1.0
+    },
+    "eye_rotation_L": [
+      3.2087,
+      1.6584,
+      -11.2857
+    ],
+    "eye_rotation_R": [
+      2.9618,
+      -1.6082,
+      11.0124
+    ],
+    "pupil_center_2D_L": [
+      657.304,
+      419.409
+    ],
+    "pupil_center_2D_R": [
+      366.696,
+      419.408
+    ],
+    "camera_matrix": [
+      [
+        1991.1111,
+        0.0,
+        512.0
+      ],
+      [
+        0.0,
+        1991.1111,
+        409.6
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "camera_extrinsic_world_to_cam": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0,
+        1.620579
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.525778
+      ]
+    ],
+    "projection_matrix": [
+      [
+        1991.1111,
+        512.0,
+        0.0,
+        269.1985
+      ],
+      [
+        0.0,
+        409.6001,
+        -1991.1111,
+        3442.1126
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.5258
+      ]
+    ],
+    "pupil_center_3D_L": [
+      0.028218,
+      -0.139112,
+      1.618675
+    ],
+    "eye_center_3D_L": [
+      0.029335,
+      -0.125778,
+      1.620579
+    ],
+    "gaze_dir_L": [
+      -0.082688,
+      -0.986559,
+      -0.140938
+    ],
+    "gaze_yaw_pitch_deg_L": [
+      -4.791,
+      -8.1021
+    ],
+    "pupil_center_3D_R": [
+      -0.028218,
+      -0.13911,
+      1.618675
+    ],
+    "eye_center_3D_R": [
+      -0.029335,
+      -0.125778,
+      1.620579
+    ],
+    "gaze_dir_R": [
+      0.082688,
+      -0.986559,
+      -0.140937
+    ],
+    "gaze_yaw_pitch_deg_R": [
+      4.791,
+      -8.1021
+    ],
+    "fixation_target_3D": [
+      -0.0,
+      -0.475778,
+      1.57058
+    ],
+    "units": {
+      "rotation": "degrees, XYZ Euler, world frame",
+      "3D": "metres, Blender world (Z up, face looks -Y)",
+      "2D": "pixels, origin top-left, x right, y down"
+    },
+    "image": "demo/direction_check/down.png",
+    "name": "down"
+  },
+  {
+    "input": {
+      "h": 0.0,
+      "v": 0.0
+    },
+    "eye_rotation_L": [
+      -4.7475,
+      -0.0776,
+      -11.4531
+    ],
+    "eye_rotation_R": [
+      -5.0048,
+      0.0697,
+      11.1756
+    ],
+    "pupil_center_2D_L": [
+      657.297,
+      409.6
+    ],
+    "pupil_center_2D_R": [
+      366.703,
+      409.601
+    ],
+    "camera_matrix": [
+      [
+        1991.1111,
+        0.0,
+        512.0
+      ],
+      [
+        0.0,
+        1991.1111,
+        409.6
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "camera_extrinsic_world_to_cam": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0,
+        1.620579
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.525778
+      ]
+    ],
+    "projection_matrix": [
+      [
+        1991.1111,
+        512.0,
+        0.0,
+        269.1985
+      ],
+      [
+        0.0,
+        409.6001,
+        -1991.1111,
+        3442.1126
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.5258
+      ]
+    ],
+    "pupil_center_3D_L": [
+      0.028206,
+      -0.139246,
+      1.620579
+    ],
+    "eye_center_3D_L": [
+      0.029335,
+      -0.125778,
+      1.620579
+    ],
+    "gaze_dir_L": [
+      -0.083522,
+      -0.996506,
+      0.0
+    ],
+    "gaze_yaw_pitch_deg_L": [
+      -4.791,
+      0.0
+    ],
+    "pupil_center_3D_R": [
+      -0.028206,
+      -0.139244,
+      1.620579
+    ],
+    "eye_center_3D_R": [
+      -0.029335,
+      -0.125778,
+      1.620579
+    ],
+    "gaze_dir_R": [
+      0.083522,
+      -0.996506,
+      0.0
+    ],
+    "gaze_yaw_pitch_deg_R": [
+      4.791,
+      0.0
+    ],
+    "fixation_target_3D": [
+      -0.0,
+      -0.475778,
+      1.620579
+    ],
+    "units": {
+      "rotation": "degrees, XYZ Euler, world frame",
+      "3D": "metres, Blender world (Z up, face looks -Y)",
+      "2D": "pixels, origin top-left, x right, y down"
+    },
+    "image": "demo/direction_check/reset.png",
+    "name": "reset"
+  }
+]

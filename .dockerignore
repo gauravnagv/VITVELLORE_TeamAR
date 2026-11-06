@@ -1,0 +1,7 @@
+*
+!scene.blend
+!metadata.json
+!README.md
+!verify.py
+!build_scene.py
+!wrapper/eyes.py

@@ -1,0 +1,5 @@
+dist/
+*.blend1
+__pycache__/
+*.pyc
+demo/*.log
