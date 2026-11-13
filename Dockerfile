@@ -1,14 +1,15 @@
-# Track 01 eye wrapper in a container (headless Blender, Cycles on CPU).
+# Track 01 eye wrapper in a container (headless Blender 4.5 LTS, Cycles on CPU, or GPU with --gpus).
 #
 #   docker build -t track1-eyes .
-#   docker run --rm -v "$PWD/out:/out" track1-eyes                      # 10 clockwise renders + metadata.json -> ./out
-#   docker run --rm -v "$PWD/out:/out" track1-eyes directions --engine CYCLES --samples 32 --outdir /out
-#   docker run --rm -v "$PWD/out:/out" track1-eyes move 0.5 -0.3 --engine CYCLES --out /out/pose.png
-#   docker run --rm --entrypoint blender track1-eyes -b scene.blend --python verify.py   # geometric self-test
+#   docker run --rm -v "$PWD/out:/out" track1-eyes                                    # 10 clockwise renders + metadata.json -> ./out
+#   docker run --rm -v "$PWD/out:/out" track1-eyes eyes directions --outdir /out       # 5-direction check
+#   docker run --rm -v "$PWD/out:/out" track1-eyes eyes move 0.5 -0.3 --out /out/pose.png
+#   docker run --rm -v "$PWD/out:/out" track1-eyes motion left --out /out --res 512   # Left video (also: right, generate)
+#   docker run --rm track1-eyes verify                                                # geometric self-test (no rendering)
 #
-# EEVEE needs an OpenGL GPU, which a plain container does not have, so the
-# container renders with Cycles (CPU). Geometry, pupil positions and metadata
-# are identical to the EEVEE renders; only the shading differs slightly.
+# EEVEE needs an OpenGL GPU, which a plain container does not have, so the container renders
+# with Cycles (CPU, or CUDA/OptiX when run with `--gpus all` on an NVIDIA host).  Geometry,
+# pupil positions and metadata are identical to the EEVEE renders; only the shading differs.
 FROM ubuntu:24.04
 
 ARG BLENDER_VERSION=4.5.15
@@ -27,8 +28,10 @@ RUN wget -q https://download.blender.org/release/Blender${BLENDER_SERIES}/blende
     && ln -s /opt/blender-${BLENDER_VERSION}-linux-x64/blender /usr/local/bin/blender
 
 WORKDIR /app
-COPY scene.blend metadata.json README.md verify.py build_scene.py ./
-COPY wrapper/eyes.py wrapper/eyes.py
+# scene.blend has texture set 01 packed; textures/ (other sets) is optional, see .dockerignore
+COPY . .
+RUN printf '#!/bin/sh\nset -e\ncmd="${1:-eyes}"; [ $# -gt 0 ] && shift\ncase "$cmd" in\n  eyes)   exec blender -b scene.blend --python wrapper/eyes.py -- "$@" --engine CYCLES ;;\n  motion) exec blender -b scene.blend --python wrapper/motion.py -- "$@" --engine CYCLES ;;\n  verify) exec blender -b scene.blend --python verify.py ;;\n  *) echo "usage: eyes|motion|verify ARGS"; exit 2 ;;\nesac\n' > /usr/local/bin/run-track1 \
+    && chmod +x /usr/local/bin/run-track1
 
-ENTRYPOINT ["blender", "-b", "scene.blend", "--python", "wrapper/eyes.py", "--"]
-CMD ["sequence", "--engine", "CYCLES", "--samples", "64", "--outdir", "/out"]
+ENTRYPOINT ["run-track1"]
+CMD ["eyes", "sequence", "--samples", "64", "--outdir", "/out"]

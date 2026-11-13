@@ -1,5 +1,19 @@
+# build outputs / intermediates
 dist/
-*.blend1
 __pycache__/
 *.pyc
+*.blend1
+scene_v2_backup.blend
+scene_*backup*.blend
 demo/*.log
+test_frames/
+tools_test_*.py
+
+# per-frame PNGs and older render passes (the final mp4s + state json are committed)
+videos/*_frames/
+videos/v1_*/
+videos/v2_*/
+videos/v3_*/
+videos/ml3_*/
+videos/*.bat
+videos/render_log*.txt

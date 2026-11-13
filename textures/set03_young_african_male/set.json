@@ -1,0 +1,24 @@
+{
+ "id": "set03",
+ "skin_source": "MakeHuman system assets (CC0): skins/young_african_male",
+ "iris_palette": "dark_brown",
+ "eyebrow_colour_srgb": [
+  0.06,
+  0.045,
+  0.04
+ ],
+ "age_factor": 0.0,
+ "uv_layout": "GNM v3 UDIM (1001 skin, 1002/1003 L eye interior/cornea, 1004/1005 R, 1006 teeth+gums, 1007 tongue)",
+ "maps": [
+  "face.1001.png",
+  "face.1002.png",
+  "face.1003.png",
+  "face.1004.png",
+  "face.1005.png",
+  "face.1006.png",
+  "face.1007.png",
+  "face_normal.1001.png",
+  "face_roughness.1001.png",
+  "set.json"
+ ]
+}

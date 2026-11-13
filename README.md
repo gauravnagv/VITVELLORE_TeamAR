@@ -1,156 +1,193 @@
 # Team AR: Track 01, Synthetic Eye Movement & Virtual Camera Rendering
 
-A textured, rigged human head in Blender. A Python wrapper rotates both eyeballs about their
-true centres so they fixate a common target 35 cm ahead. A locked camera 40 cm ahead renders
-1024×1024 PNGs, and every frame comes with ground-truth metadata (3D rotations and projected
-2D pupil centres).
+**Samsung PRISM XR Hackathon 2026** · Team **AR** · **VIT Vellore** · Vagicharla Gaurav Nag, Marimamula Akshay
+
+Realistic, programmatically controlled eyes on Google's **GNM v3** head in Blender.
+
+| Deliverable | Where |
+|---|---|
+| Three input videos (Left, Right, Generate Motion), each 15 s or less | `videos/left.mp4`, `videos/right.mp4`, `videos/generate.mp4` |
+| 10 UV texture sets on the GNM UV layout + one render per set | `textures/setNN_*/`, `renders/texture_sets/` |
+| Expression animated on the Timeline (eyelids, iris/pupil, brows, eyes, head) | `expression_timeline.blend` |
+| Python render script with the 3 inputs | `wrapper/motion.py` (on top of the `wrapper/eyes.py` API) |
+| Original brief: 10 clockwise renders + metadata, 5-direction check | `renders/frame_00..09.png`, `metadata.json`, `demo/` |
+| Presentation | `VITVellore_AR.pptx` |
+
+* **Head model:** GNM v3 (Generative aNthropometric Model, Apache-2.0), with its official UDIM UV layout.
+* **Textures:** 10 photographic texture sets wrapped directly onto the GNM UVs. Each set has skin albedo, pore normal map, roughness, separate left and right irises, cornea, teeth and tongue.
+* **Eyes:** eyeballs rotate about their true centres and converge on a shared target. Eyelids follow gaze, blinks close the lid fully, and brows and pupils are controllable. Lash geometry moves with the lids.
+* **Motion:** a Python controller renders three inputs (**Left**, **Right**, **Generate Motion**) to video. Each is at most 15 s and uses human saccade, blink and head-eye coordination timing.
+* **Skin shading:** pore normal maps, a roughness map remapped to a skin-plausible range, subsurface scattering and a faint sheen. The sclera is toned off-white.
+* **Original brief outputs** are also included: 10 clockwise renders with `metadata.json`, a 5-direction check, and a demo video.
 
 ## Bundle layout
 
 ```
-Team_AR.zip
-├── scene.blend          # textured head mesh, eye bones, materials (all textures packed)
-├── wrapper/eyes.py      # eyes.move(h, v) / eyes.reset() / eyes.render()
-├── wrapper/demo_live.py # optional on-screen demo (used for the demo video)
-├── renders/             # frame_00.png … frame_09.png  (clockwise, theta_k = 2*pi*k/10)
-├── metadata.json        # one record per render
-├── demo/                # contact_sheet.png, direction_check.png, direction_check/*.png, demo_video.mp4
-├── verify.py            # geometric self-test (optional)
-├── build_scene.py       # how scene.blend was generated (optional, for reproducibility)
-├── Dockerfile           # headless run in a container (Blender 4.5 LTS + Cycles CPU)
-├── requirements.txt     # no pip packages needed for the wrapper (see file)
-└── README.md
+VITVellore_AR.zip               (python package.py; the GitHub repo has the same layout)
+├── scene.blend                 # GNM head, armature, lid/brow/pupil shape keys, lashes, camera, lights (textures packed)
+├── expression_timeline.blend   # the same scene with the "Generate Motion" expression keyframed on the Timeline
+├── wrapper/eyes.py             # eyes.move(h,v) / reset() / blink() / brows() / pupil() / render() / set_textures()
+├── wrapper/motion.py           # 3 inputs: left | right | generate  -> frames + mp4 (<= 15 s)
+├── textures/setNN_*/           # 10 GNM UDIM texture sets (face.<UDIM>.png + face_normal / face_roughness)
+├── videos/                     # left.mp4, right.mp4, generate.mp4 (+ per-frame state json)
+├── renders/                    # frame_00..09.png (clockwise) + texture_sets/*.png (one render per texture set)
+├── metadata.json               # one record per clockwise render
+├── demo/                       # contact sheet, direction check, demo video
+├── gnm_head/                   # numpy GNM loader, eyelid/brow controls, eyelashes, texture synthesis
+├── build_scene_gnm.py          # rebuilds scene.blend from the GNM model (reproducibility)
+├── polish_look.py              # final look: lighting, HDRI ambient, skin shader, sclera tone, colour (used by the build)
+├── add_expression_keys.py      # smile / squint keys fitted in GNM's expression space (used by the build)
+├── make_demo_video.py          # builds demo/demo_video.mp4 from the finished outputs
+├── bake_skins.py, make_texture_sets.py   # how the texture sets were made (reproducibility)
+├── verify.py                   # geometric self-test (no rendering)
+├── package.py                  # builds the submission zip and checks every deliverable is present
+├── Dockerfile, requirements.txt, README.md, VITVellore_AR.pptx
+└── legacy/                     # the first (MakeHuman) scene builder, kept for reference only
 ```
 
 ## Setup
 
-### Option A: Blender on your PC
-
-* **Blender 4.2 or newer.** Tested with **Blender 4.5.15 LTS** on Windows 11, EEVEE on Intel UHD graphics.
-* No add-ons are needed. The MakeHuman assets are baked into `scene.blend` and all textures are packed.
-* No extra Python packages. The wrapper uses only Blender's bundled Python (`bpy`, `mathutils`).
-  `requirements.txt` lists only the optional `imageio-ffmpeg`, used to re-record the demo video.
-
-### Option B: Docker (no local Blender install)
-
-```bash
-docker build -t track1-eyes .
-docker run --rm -v "$PWD/out:/out" track1-eyes          # 10 clockwise renders + metadata.json -> ./out
-docker run --rm -v "$PWD/out:/out" track1-eyes directions --engine CYCLES --samples 32 --outdir /out
-docker run --rm -v "$PWD/out:/out" track1-eyes move 0.5 -0.3 --engine CYCLES --out /out/pose.png
-docker run --rm --entrypoint blender track1-eyes -b scene.blend --python verify.py   # self-test
-```
-
-The image downloads Blender 4.5.15 LTS for Linux. A plain container has no OpenGL GPU, so it
-renders with **Cycles on the CPU** instead of EEVEE. Eye rotations, 2D pupil centres and the
-metadata are identical; only the shading looks slightly different.
+* **Blender 4.2 or newer.** Tested on **Blender 4.5.15 LTS** (Windows 11: EEVEE on Intel UHD graphics and on an NVIDIA RTX A2000).
+* No add-ons and no pip packages are needed to run the wrapper. It uses Blender's bundled Python (`bpy`, `mathutils`, `numpy`). Everything the scene needs is packed into `scene.blend`.
+* You only need the GNM model file (`gnm_head.npz`, from https://huggingface.co/google/gnm-v3) to *rebuild* the scene with `build_scene_gnm.py`.
 
 ## Run
 
 From the bundle root:
 
 ```bash
-# Regenerate the 10 clockwise renders + metadata.json  (default command)
+# Evaluation inputs: renders the frames and writes an mp4 (<= 15 s) to videos/
+blender -b scene.blend --python wrapper/motion.py -- left
+blender -b scene.blend --python wrapper/motion.py -- right
+blender -b scene.blend --python wrapper/motion.py -- generate
+#   options: --res 1024 --fps 25 --samples 24 --textures textures/set05_young_asian_female
+#            --save-blend out.blend (keyframed Timeline)   --no-render   --encode-only
+
+# Original brief: 10 clockwise renders + metadata.json, and the 5-direction check
 blender -b scene.blend --python wrapper/eyes.py -- sequence
-
-# 5-direction check: center, left, right, up, down, reset  -> demo/direction_check/
 blender -b scene.blend --python wrapper/eyes.py -- directions
-
-# Any single pose
 blender -b scene.blend --python wrapper/eyes.py -- move 0.5 -0.3 --out out.png
 
-# Same commands from plain Python. The wrapper finds Blender (PATH, $BLENDER or the
-# default install folder) and relaunches itself inside it.
+# One render per texture set (same pose/camera/lights) -> renders/texture_sets/*.png + texture_sets.json
+blender -b scene.blend --python wrapper/eyes.py -- textures
+
+# Timeline expression file (Generate Motion keyframed; no rendering)
+blender -b scene.blend --python wrapper/motion.py -- generate --no-render --save-blend expression_timeline.blend
+
+# Same commands from plain Python (finds Blender on PATH, $BLENDER, or pass --blender PATH)
+python wrapper/motion.py generate
 python wrapper/eyes.py sequence
-python wrapper/eyes.py move 1 0 --blender "C:/Program Files/Blender Foundation/Blender 4.5/blender.exe"
 ```
 
-Options: `--engine EEVEE|CYCLES` (default EEVEE; CYCLES uses a GPU if one is present),
-`--samples N`, `--outdir DIR`.
+### Docker (optional)
 
-Interactive use inside Blender (Scripting tab → Python console):
+The container renders with Cycles: on the CPU, or on CUDA/OptiX when started with `--gpus all`. EEVEE needs an OpenGL display, which a container does not have.
+
+```bash
+docker build -t track1-eyes .
+docker run --rm -v "$PWD/out:/out" track1-eyes                                   # 10 clockwise renders + metadata.json
+docker run --rm -v "$PWD/out:/out" track1-eyes eyes directions --outdir /out      # 5-direction check
+docker run --rm -v "$PWD/out:/out" track1-eyes motion left --out /out --res 512  # Left video (also right, generate)
+docker run --rm track1-eyes verify                                               # geometric self-test
+```
+
+Interactive use (Blender, Scripting tab):
 
 ```python
 import sys; sys.path.append(r"<bundle>/wrapper")
 import eyes
-eyes.move(1, 0)        # look right (image right)
-eyes.move(0, -1)       # look down
-eyes.reset()           # centre
-eyes.render("my_frame.png")   # returns the metadata dict for that frame
+eyes.move(-1, 0)          # both eyes look to image-left
+eyes.blink(0.6)           # lids 60 % closed
+eyes.brows(0.8)           # brows raised
+eyes.pupil(0.5)           # pupils dilated
+eyes.smile(0.8)           # smile (lip corners + cheeks)
+eyes.squint(0.6)          # cheeks up, lower lids rise (eyes.squint(0.6, side="L") for one eye)
+eyes.reset()
+eyes.set_textures("textures/set03_young_african_male")
+eyes.render("frame.png")  # returns the metadata dict for this frame
 ```
 
-Live demo: `blender scene.blend --python wrapper/demo_live.py` (recorded in `demo/demo_video.mp4`, 88 s).
+To play the expression: open `expression_timeline.blend` and press **Space** in the Timeline.
 
 ## Conventions
 
 | Item | Definition |
 |---|---|
-| Inputs | `h, v ∈ [-1, +1]`, clamped. **h > 0 moves the pupils to image right** (the subject's left), **v > 0 moves them up**. |
-| Fixation | Target = eye midpoint + 35 cm forward + (h·5 cm, v·5 cm) in the camera's right/up directions (motion bounds ±5 cm). |
-| Eye rotation | Each eyeball rotates **about its own centre** so its optical axis passes through the target: the minimal rotation from the modelled rest axis, with no torsion. This gives physiological **vergence**: at `reset()` both eyes converge about 4.8° inward on the 35 cm target. |
-| Camera | Locked 40 cm in front of the eye midpoint, looking straight at the face. 70 mm lens on a 36 mm sensor, vertical lens shift −0.10 so the whole face is in frame. 1024×1024. |
-| Lighting | Fixed 3-point area lights + constant world: identical for every frame. Renders are deterministic. |
-| Clockwise sequence | `theta_k = 2πk/10`, `k = 0..9`, `h = sin(theta)`, `v = cos(theta)`. k = 0 is straight up, k = 1 moves toward image right (clockwise as seen in the image). |
+| Inputs | `h, v ∈ [-1, +1]`, clamped. **h > 0 moves the pupils to image right** (the subject's left). **v > 0 moves them up**. "Left" in the videos means image-left. |
+| Fixation | Target = eye midpoint + 35 cm forward + (h·5 cm, v·5 cm) in the camera's right/up axes. |
+| Eye rotation | Each eyeball rotates **about its own centre** (GNM eye joint) so its optical axis passes through the target. This is the minimal rotation, with no torsion, and gives physiological vergence. |
+| Eyelids | The upper lid follows vertical gaze about 1:1 and the lower lid partially (Becker & Fuchs 1988). Lid skin slides over the globe about the eyeball centre and stays outside the cornea. A blink closes the lids along their whole length (gap ≤ 0.7 mm). |
+| Camera | Locked 40 cm in front of the eye midpoint. 70 mm lens, 36 mm sensor, lens shift −0.10, 1024×1024. |
+| Lighting | Fixed for every frame: a small round key light high to camera-left, a weaker fill, two warm rim lights, and a low-strength studio HDRI for ambient bounce and reflections (hidden from the camera, which sees a plain dark-grey background). The lights are round discs, so the corneal catch-lights are round. Colour management is AgX (Punchy look). All values are in `polish_look.py`. |
+| Clockwise sequence | `theta_k = 2πk/10`, `h = sin θ`, `v = cos θ`, k = 0 at the top, moving clockwise in the image. |
 
-Note: the brief's example record shows `v = 0.309` for frame 3. `cos(1.8849) = −0.309`, and
-metadata.json stores the mathematically correct value.
+## Natural motion (wrapper/motion.py)
+
+* **Saccades** follow the human main sequence (duration = 2.2 ms/° × amplitude + 21 ms), with a minimum-jerk profile and a small glissade.
+* **Fixations** include slow drift and microsaccades of 0.2–0.5°. The pupil shows hippus (a slow oscillation in size).
+* **Head-eye coordination:** gaze shifts larger than about 6° recruit a delayed, damped head turn. Because the eyes keep fixating the world target, they counter-rotate (vestibulo-ocular reflex).
+* **Blinks** are asymmetric: about 90 ms to close and 200 ms to open. Blinks often accompany large saccades, and the "Generate Motion" expression includes a slow, exasperated blink. Each blink onset is jittered by up to ±0.12 s, so the Left and Right videos do not blink in lockstep.
+* **Pupil:** `eyes.pupil(+1)` is a physiological full dilation (about 65 % of the iris diameter), not the raw GNM key, which leaves only a thin iris ring.
+* **Upward gaze** in the expression peaks at about 17°. That keeps the eye inside the range where the upper lid can still lift clear of the iris (about 15° of lid raise relative to the head).
+* **Generate Motion** (14 s): glances left and right, an upward eye-roll with raised brows and the head tipped back, a slow blink, a downward "thinking" look with lowered brows and slightly tightened lids, a surprised widening with dilated pupils, reading saccades, then a look back up with a warm smile.
+* **Whole-face expressions:** in real faces the eyes never move alone. A genuine (Duchenne) smile raises the cheeks and pushes the lower lids up (FACS AU6 + AU12). The scene therefore has `smile` and `squint_L/R` shape keys, fitted in GNM's own learned expression spaces (`gnm_head/expressions.py`, added by `add_expression_keys.py`). In the motion, every smile automatically brings the matching squint. The lower lashes follow the squint through driven keys.
+
+## Textures (GNM UDIM layout)
+
+Each `textures/setNN_<name>/` folder is a complete set named in GNM's UDIM convention:
+
+| Tile | File | Content |
+|---|---|---|
+| 1001 | `face.1001.png` (4096²) | Skin albedo with eyebrows, eye-socket conjunctiva and mouth interior |
+| 1001 | `face_normal.1001.png`, `face_roughness.1001.png` | Pore and fine-wrinkle normal map; roughness (oily T-zone, glossy lips, wet sockets) |
+| 1002 / 1004 | `face.1002.png`, `face.1004.png` (2048²) | **Separate** left and right irises with sclera: radial fibres, crypts, collarette, contraction furrows, limbal ring, scleral veins |
+| 1003 / 1005 | `face.1003.png`, `face.1005.png` | Cornea (clear) |
+| 1006 / 1007 | `face.1006.png`, `face.1007.png` | Teeth and gums, tongue |
+
+The 10 sets cover young, middle-aged and older faces across African, Asian and Caucasian skin, male and female. Iris colours are dark brown, brown, hazel, green, blue and grey.
+
+**How they were made** (`bake_skins.py` → `make_texture_sets.py`):
+1. A textured MakeHuman CC0 head is aligned to GNM using eye-centre and nose landmarks, then ICP.
+2. GNM's 170 head-identity coefficients are fitted to it. The surfaces then match to a **0.70 mm** median over the face.
+3. Each photographic skin and the eyebrows are baked onto GNM's UVs with Cycles.
+4. Pore, roughness and iris maps are synthesised in UV space.
+
+Because every GNM identity shares the same UVs, any set wraps directly onto any GNM head.
 
 ## metadata.json
 
-A JSON array with one record per render. These are the required fields:
+One record per render. The required fields are `frame`, `theta`, `input {h, v}`, `eye_rotation_L/R` (degrees, XYZ Euler, world), `pupil_center_2D_L/R` (pixels, origin top-left) and `camera_matrix` (OpenCV K). Extra fields: `camera_extrinsic_world_to_cam`, `projection_matrix`, `pupil_center_3D_*`, `eye_center_3D_*`, `gaze_dir_*`, `gaze_yaw_pitch_deg_*`, `eyelid_pitch_deg_*`, `blink`, `brows`, `pupil`, `head_yaw_pitch_roll_deg`, `fixation_target_3D`. **L is the subject's left eye**, which appears on the image right.
 
-```jsonc
-{
-  "frame": 3,
-  "theta": 1.884956,                       // theta_k = 2*pi*k/10
-  "input": { "h": 0.951057, "v": -0.309017 },
-  "eye_rotation_L": [rx, ry, rz],          // degrees, XYZ Euler, world frame, relative to the modelled rest pose
-  "eye_rotation_R": [rx, ry, rz],
-  "pupil_center_2D_L": [x, y],             // pixels, origin top-left, x right, y down
-  "pupil_center_2D_R": [x, y],
-  "camera_matrix": [[fx,0,cx],[0,fy,cy],[0,0,1]]   // OpenCV intrinsic K
-}
-```
+## Validation (`verify.py`, no rendering)
 
-Extra fields are provided for verification: `camera_extrinsic_world_to_cam` (OpenCV `[R|t]`),
-`projection_matrix` (`P = K[R|t]`), `pupil_center_3D_*`, `eye_center_3D_*`, `gaze_dir_*`,
-`gaze_yaw_pitch_deg_*` (gaze angles vs. straight ahead: yaw + = image right, pitch + = up),
-`fixation_target_3D`, `units` and `image`. Here **L = the subject's left eye**, which appears on the
-image right. The pupil point is the exact 3D spot on the iris where the eye material draws the pupil
-centre (UV 0.295/0.3 and 0.705/0.7, read from the material), rotated with the eyeball and projected
-with the camera. `eye_rotation_*` is the rotation actually applied to the eyeball, relative to the
-modelled MakeHuman rest pose (whose eyes splay slightly outward). For gaze labels, use `gaze_yaw_pitch_deg_*`.
-Multiplying `projection_matrix` by `[pupil_center_3D, 1]` reproduces `pupil_center_2D`.
-
-## Validation (`verify.py`, no rendering needed)
-
-`blender -b scene.blend --python verify.py` runs these checks over 17 gaze inputs:
+`blender -b scene.blend --python verify.py` runs these checks:
 
 | Check | Result |
 |---|---|
 | Our `K[R|t]` projection vs Blender `world_to_camera_view` | max error 0.0005 px |
-| Deformed eye mesh vs ideal rigid rotation about the eyeball centre | max error 0.0004 mm |
-| Optical axis passes through the fixation target | max miss 0.0016 mm |
-| Left / Right / Up / Down pupil shift sign (both eyes) | 8 / 8 PASS (±9.7–9.9 px) |
+| Deformed eyeballs vs ideal rigid rotation about the eyeball centre | max error 0.00005 mm |
+| Optical axis passes through the fixation target | max miss 0.0004 mm |
+| Left / Right / Up / Down pupil shift sign (both eyes) | 8 / 8 PASS (±9.2–9.4 px) |
 | `reset()` returns exactly to the centre pose | PASS |
+| Upper lid follows up / down gaze | +0.98 mm / −1.20 mm, PASS |
+| Blink closes the eye | mean gap −0.09 mm, max +0.7 mm, PASS |
 
-## How scene.blend was built (reproducible)
-
-`build_scene.py` creates the scene from scratch with the MPFB 2 add-on (MakeHuman for Blender) and the
-**MakeHuman system assets (CC0)**: base mesh, `young_caucasian_male` skin, high-poly eyes with the
-MPFB procedural eye material, eyebrow001, eyelashes01 and short02 hair, using MPFB's `default` rig
-with `eye.L` / `eye.R` bones. It then:
-
-1. fits a sphere (least squares) to each eyeball and moves the eye-bone heads to the fitted centres,
-2. skins each eyeball 100 % to its eye bone, so a bone rotation is exactly a rotation about the eyeball centre,
-3. adds the fixation-target empty, the locked camera and the fixed lights, and packs all textures.
+## Rebuilding from source (optional)
 
 ```bash
-blender -b --command extension install-file -r user_default -e mpfb.zip   # once
-blender -b --python build_scene.py -- --out scene.blend
+blender -b --factory-startup --python build_scene_gnm.py -- \
+    --npz path/to/gnm_head.npz --textures textures/set01_young_caucasian_male \
+    --identity textures/_bake/fit.json --out scene.blend
 ```
 
 ## Assets & licences
 
-* MakeHuman / MPFB 2 base mesh and system assets: **CC0**. https://static.makehumancommunity.org/
-* All code in this bundle was written by Team AR for this hackathon.
+* GNM v3 head model: © Google LLC, **Apache-2.0**. https://github.com/google/GNM. The numpy evaluation in `gnm_head/gnm_model.py` mirrors the official maths.
+* MakeHuman system assets (skin photographs, eyebrows): **CC0**. https://static.makehumancommunity.org/
+* All other code, the procedural iris, pore and roughness maps, and the eyelashes were made by Team AR for this hackathon.
+
+## Limitations
+
+* GNM has no hair, so the scalp shows the short stubble in the source skin photographs.
+* The eyebrows are part of the texture rather than strands. They move with the brow shape keys but have no 3D depth.
+* The videos are rendered with EEVEE for speed (about 1 s per 1024² frame on an RTX A2000). Cycles (`--engine CYCLES`) gives more accurate skin subsurface scattering, but is much slower.

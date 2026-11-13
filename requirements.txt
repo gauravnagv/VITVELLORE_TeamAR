@@ -1,5 +1,10 @@
-# The eye wrapper (wrapper/eyes.py) needs NO pip packages: it runs inside
-# Blender 4.2+ and uses only Blender's bundled Python (bpy, mathutils).
+# The eye wrapper (wrapper/eyes.py, wrapper/motion.py) needs NO pip packages: it runs inside
+# Blender 4.2+ (tested 4.5.15 LTS) and uses only Blender's bundled Python (bpy, mathutils, numpy).
 #
-# Optional, only for re-recording the demo video with record_demo.py:
+# Optional helper scripts that run in plain Python:
+#   make_contact_sheet.py  -> pillow
+#   make_demo_video.py     -> pillow, numpy, imageio-ffmpeg
+#   record_demo.py         -> imageio-ffmpeg
+pillow>=10
+numpy>=1.24
 imageio-ffmpeg>=0.5
