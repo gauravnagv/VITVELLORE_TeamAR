@@ -94,6 +94,21 @@ def push_pull_fill(img, valid):
 
 
 # --------------------------------------------------------------------------- #
+# v8 'orange peel' relief.  0.30 / (1.6, 4.5) was tuned at 1024 and read as pebbling at 2048
+# (17 Nov 2026 fix list); see tools_regen_normal.py for the A/B.
+# v8 values were PEEL 0.30 (1.6, 4.5), pores 1.1 / 2.0 / 0.012 / +0.25, k 1.3: pebbled at 2048.
+# 17 Nov 'D2': v7 pore sizes + light fine peel; BIG_DENS stays 0.012 so the random pore positions
+# still match the v8 albedo's pore darkening (mid-scale bump energy on the cheek -21%).
+PEEL_W = 0.10
+PEEL_BAND = (1.0, 3.0)
+# pore blur (x sc), big-pore blur / density / base weight outside nose+cheeks, normal strength
+PORE_BLUR = 0.9
+BIG_BLUR = 1.7
+BIG_DENS = 0.012
+BIG_BASE = 0.0
+NORMAL_K = 1.1
+
+
 def detail_maps(size, ra, rb, seed):
     """Pore / wrinkle height field -> (normal map, pore map) in UV space."""
     rng = np.random.default_rng(seed)
@@ -109,8 +124,8 @@ def detail_maps(size, ra, rb, seed):
         imp[ys, xs] = rng.uniform(0.5, 1.0, n).astype(np.float32)
         return imp
 
-    pores = blur(impulses(0.030), 0.9 * sc)
-    big = blur(impulses(0.010), 1.7 * sc) * np.clip(nose * 1.2 + cheeks * 0.8, 0, 1)
+    pores = blur(impulses(0.030), PORE_BLUR * sc)
+    big = blur(impulses(BIG_DENS), BIG_BLUR * sc) * np.clip(nose * 1.2 + cheeks * 0.8 + BIG_BASE, 0, 1)
     pores = pores / max(pores.max(), 1e-6) + 1.6 * big / max(big.max(), 1e-6)
     pores *= skin * (1 - 0.85 * lips)
     # fine cross-hatched skin wrinkles + vertical lip creases
@@ -118,11 +133,15 @@ def detail_maps(size, ra, rb, seed):
     wr = blur(n1, 1.4 * sc) - blur(n1, 4.0 * sc)
     n2 = rng.standard_normal((size, size)).astype(np.float32)
     lipc = _blur_xy(n2, 0.8 * sc, 7.0 * sc)   # creases run vertically across the lips
-    height = -pores + 0.35 * wr / max(np.abs(wr).max(), 1e-6) * skin \
+    # v8: mid-scale 'orange peel' relief (0.3-1 mm) - breaks up specular highlights at video scale
+    n3 = rng.standard_normal((size, size)).astype(np.float32)
+    peel = blur(n3, PEEL_BAND[0] * sc) - blur(n3, PEEL_BAND[1] * sc)
+    peel = peel / max(np.abs(peel).max(), 1e-6) * skin * (1 - lips)
+    height = -pores + 0.35 * wr / max(np.abs(wr).max(), 1e-6) * skin + PEEL_W * peel \
         + 0.8 * lipc / max(np.abs(lipc).max(), 1e-6) * lips
     height = height.astype(np.float32)
     gy, gx = np.gradient(height)          # rows go down = -v
-    k = 1.1 * sc
+    k = NORMAL_K * sc
     nx, ny = -k * gx, k * gy
     nz = np.ones_like(nx)
     nrm = np.sqrt(nx * nx + ny * ny + nz * nz)
@@ -144,6 +163,79 @@ def _blur_xy(a, sx, sy):
 
 
 # --------------------------------------------------------------------------- #
+# v8 skin realism: colour variation real skin has and the MakeHuman bakes lack
+# --------------------------------------------------------------------------- #
+def beard_mask(size):
+    """Stubble region in GNM UV space (upper lip, chin, jaw up to the sideburns), soft-edged.
+    Landmarks measured on the 4096 GNM layout: face centre u=2048 px, nose base y~2010,
+    mouth corners ~250 px off-centre at y~2120, sideburns ~1100 px off-centre at y~1650."""
+    sc = size / 4096.0
+    y, x = np.mgrid[0:size, 0:size].astype(np.float32) / sc
+    dx = np.abs(x - 2048.0)
+    top = np.where(dx < 250, 2015.0 + 0.10 * dx, 2040.0 - (dx - 250) * (230.0 / 850.0))
+    bot = 2760.0 - 0.45 * dx
+    m = ((y > top) & (y < bot) & (dx < 1150)).astype(np.float32)
+    m = blur(m, 40 * sc)
+    # thinner toward the cheek line and the neck
+    m *= np.clip((y - top) / (170.0), 0, 1) ** 1.2 * np.clip((bot - y) / 220.0, 0, 1)
+    return np.clip(m, 0, 1)
+
+
+def skin_realism(alb, ra, rb, rng, male, age, hair):
+    size = alb.shape[0]
+    sc = size / 4096.0
+    socket, mouth = ra[..., 0], ra[..., 1]
+    lips, nose, cheeks = rb[..., 0], rb[..., 1], rb[..., 2]
+    face_lum = float(np.median(alb[1400:2400, 1500:2600].mean(-1))) if size == 4096 else 0.5
+    fair = np.clip((face_lum - 0.25) / 0.45, 0, 1)        # 0 dark skin .. 1 very fair
+    red = np.array([1.0, -0.55, -0.45], np.float32)       # haemoglobin tint direction
+
+    def tint(a, mask, amt, direction):
+        return a * (1 + amt * mask[..., None] * direction)
+
+    # haemoglobin mottling: low-frequency blotches, strongest on fair skin
+    mott = tx.fbm(size, size, rng, base=24, octaves=4).astype(np.float32)
+    mott = (mott - mott.mean()) / max(mott.std(), 1e-6)
+    alb = tint(alb, np.clip(mott, 0, None), 0.018 * (0.4 + 0.6 * fair), red)
+    lum_n = tx.fbm(size, size, rng, base=48, octaves=3).astype(np.float32)
+    alb = alb * (1 + 0.015 * np.clip((lum_n - lum_n.mean()) / max(lum_n.std(), 1e-6), -2.5, 2.5))[..., None]
+    # flushed cheeks, nose tip, chin
+    alb = tint(alb, blur(cheeks, 60 * sc), 0.06 * (0.3 + 0.7 * fair), red)
+    alb = tint(alb, blur(nose, 30 * sc), 0.05 * (0.3 + 0.7 * fair), red)
+    # eyelids: pinker and slightly darker; under-eye shadow (faint violet-brown)
+    ring = np.clip(blur(socket, 55 * sc) * 2.2 - socket * 3.0, 0, 1)
+    alb = tint(alb, ring, 0.07 * (0.3 + 0.7 * fair), red)
+    alb = alb * (1 - 0.07 * ring[..., None])
+    under = np.roll(ring, int(60 * sc), axis=0) * (1 - ring)
+    alb = alb * (1 - 0.06 * under[..., None] * np.array([0.8, 1.0, 0.7]))
+    # freckles / melanin spots
+    n = int(size * size * 1.2e-4)
+    imp = np.zeros((size, size), np.float32)
+    ys, xs = rng.integers(0, size, n), rng.integers(0, size, n)
+    imp[ys, xs] = rng.uniform(0.3, 1.0, n)
+    fr = blur(imp, 2.2 * sc)
+    fr = np.clip(fr / max(np.percentile(fr[fr > 0], 99), 1e-6), 0, 1) * (1 - lips) * (1 - socket)
+    fr *= 0.5 + 0.5 * np.clip(blur(cheeks + nose, 80 * sc) * 2, 0, 1)
+    alb = alb * (1 - (0.10 + 0.10 * fair) * fr[..., None] * np.array([0.6, 0.85, 1.0]))
+    # stubble: shaved-beard shadow + individual follicle dots
+    if male:
+        bm = beard_mask(size) * (1 - np.clip(blur(lips, 6 * sc) * 1.5, 0, 1)) * (1 - nose)
+        hc = np.array(hair, np.float32)
+        grey = hc.mean() > 0.35                                  # white/grey stubble
+        shadow = (0.05 if grey else 0.10) * (0.5 + 0.5 * fair)
+        alb = alb * (1 - shadow * bm[..., None] * np.array([1.0, 0.86, 0.74]))   # blue-grey
+        n = int(size * size * 0.010)
+        imp = np.zeros((size, size), np.float32)
+        ys, xs = rng.integers(0, size, n), rng.integers(0, size, n)
+        imp[ys, xs] = rng.uniform(0.5, 1.0, n)
+        dots = np.clip(blur(imp, 0.6 * sc) * 3.0, 0, 1) * bm
+        col = hc * (1.6 if grey else 0.5)
+        k = (0.35 if grey else 0.45) * dots[..., None]
+        alb = alb * (1 - k) + col * k
+    return np.clip(alb, 0, 1)
+
+
+# --------------------------------------------------------------------------- #
 def make_set(bake, out_root, sid, skin, palette, hair, age, size_eye, shared):
     ra, rb, brow_a, brow_rgb, normal, pores = shared
     raw = load(os.path.join(bake, skin, "skin_albedo_raw.png"))
@@ -152,8 +244,10 @@ def make_set(bake, out_root, sid, skin, palette, hair, age, size_eye, shared):
     alb = push_pull_fill(raw, valid)
     socket = blur(ra[..., 0], 2.0 * size / 4096)[..., None]
     mouth = blur(ra[..., 1], 2.0 * size / 4096)[..., None]
-    # pores slightly darker (cavities catch less light)
-    alb = alb * (1 - 0.06 * pores[..., None])
+    # pores darker (cavities catch less light)
+    alb = alb * (1 - 0.10 * pores[..., None])
+    alb = skin_realism(alb, ra, rb, np.random.default_rng(int(sid[3:]) * 31 + 5),
+                       male=skin.endswith("_male"), age=age, hair=hair)
     # eyebrows
     a = np.clip(brow_a[..., :1] * 1.15, 0, 1) * 0.9
     lum = brow_rgb.mean(-1, keepdims=True)
@@ -168,7 +262,7 @@ def make_set(bake, out_root, sid, skin, palette, hair, age, size_eye, shared):
     # roughness
     tz, lips = ra[..., 2], rb[..., 0]
     rough = 0.52 + 0.04 * age - 0.11 * tz - 0.05 * rb[..., 1] - 0.16 * lips + 0.06 * pores
-    rough = rough * (1 - socket[..., 0]) + 0.12 * socket[..., 0]
+    rough = rough * (1 - socket[..., 0]) + 0.06 * socket[..., 0]       # wet conjunctiva / caruncle
     rough = rough * (1 - mouth[..., 0]) + 0.18 * mouth[..., 0]
     rough += 0.03 * (blur(np.random.default_rng(len(sid)).standard_normal(tz.shape).astype(np.float32), 6) * 8)
     save(os.path.join(d, "face_roughness.1001.png"), np.clip(rough, 0.05, 0.9), non_color=True)

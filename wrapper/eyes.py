@@ -180,6 +180,9 @@ class EyeRig:
         hpos = A @ ph.bone.head_local
         M_neck = Matrix.Translation(n) @ rot(0.4) @ Matrix.Translation(-n)
         pn.matrix = A_inv @ (M_neck @ A @ pn.bone.matrix_local)
+        # the head bone's matrix setter converts through its PARENT's current pose: refresh the
+        # neck first, or the head lands ~9 mm off what self.H says (fixed 16 Nov)
+        bpy.context.view_layer.update()
         h2 = M_neck @ hpos
         # remaining 60 % about the (moved) head joint; total head rotation = rot(1.0)
         M_head = Matrix.Translation(h2) @ (rot(1.0) @ rot(0.4).inverted()) @ Matrix.Translation(-h2) @ M_neck
@@ -413,14 +416,34 @@ def set_textures(tex_dir):
                     pass
             img.filepath = os.path.join(tex_dir, "%s.<UDIM>.png" % stem)
             img.reload()
+    # 3D hair (buzz cut, brows, vellus) takes its colour from the set's set.json
+    if bpy.data.objects.get("HairScalp") is not None:
+        try:
+            sys.path.insert(0, BUNDLE_DIR)
+            import add_hair
+            add_hair.set_hair_colour(tex_dir)
+        except Exception as e:
+            print("[eyes] hair colour not updated:", e, flush=True)
 
 
 def set_engine(engine="EEVEE", samples=None):
+    """EEVEE (fast, the scene's saved look) or CYCLES (path traced, used for the final videos).
+    Cycles applies its own look preset (polish_look.CYCLES_FINAL) and the path-tracing eye
+    fixes in memory; the saved scene.blend is not modified."""
     scn = bpy.context.scene
     if engine.upper().startswith("CYC"):
         scn.render.engine = "CYCLES"
+        try:
+            sys.path.insert(0, BUNDLE_DIR)
+            import polish_look
+            look = os.environ.get("SAM_LOOK") or getattr(polish_look, "CYCLES_V8", polish_look.CYCLES_FINAL)
+            print("[eyes] Cycles look:", look, flush=True)
+            polish_look.apply(look)
+            polish_look.fix_eyes_for_cycles()
+            polish_look.cycles_settings(samples or 128)
+        except Exception as e:   # older bundle without the Cycles look: plain settings
+            print("[eyes] Cycles look not applied:", e, flush=True)
         scn.cycles.samples = samples or 128
-        scn.cycles.seed = 0
         scn.cycles.use_denoising = True
         prefs = bpy.context.preferences.addons.get("cycles")
         scn.cycles.device = "CPU"

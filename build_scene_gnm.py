@@ -428,9 +428,13 @@ def main():
     sys.path.insert(0, HERE)
     import add_expression_keys  # noqa: E402  (smile, squint_L/R: GNM-fitted whole-face keys)
     report.update(add_expression_keys.add_keys(head, ec, ob, lash_ob))
+    import add_wrinkles  # noqa: E402  (driven forehead / glabella / crow's-feet creases)
     print("[build] shape keys:", [k.name for k in ob.data.shape_keys.key_blocks], flush=True)
     print("[build] report:", json.dumps(report), flush=True)
     build_materials(ob, order, os.path.abspath(a.textures) if a.textures else None)
+    report.update(add_wrinkles.add(head, ob))      # needs the Skin material
+    import add_hair  # noqa: E402  (3D buzz cut, eyebrows, vellus hair on the skin surface)
+    report["hair"] = add_hair.add(head, ob, 1.0, os.path.abspath(a.textures) if a.textures else None)
     sub = ob.modifiers.new("Subdivision", "SUBSURF")
     sub.levels, sub.render_levels = 1, 2
 
@@ -456,6 +460,10 @@ def main():
                 "build_report": report, "textures": _rel(a.textures) if a.textures else None,
                 "expression_keys": list(add_expression_keys.KEYS)})
     bpy.context.scene["track1_config"] = json.dumps(cfg)
+    import add_tearline  # noqa: E402  (lower-lid tear bead; needs track1_config + eye materials)
+    report.update(add_tearline.add())
+    import add_sclera_shading  # noqa: E402  (live lid contact shading on the eye whites)
+    report.update(add_sclera_shading.add())
     # Final look (portrait key/fill/rims, HDRI ambient hidden from camera, skin shader,
     # sclera tone, AgX Punchy) lives in polish_look.py so the build and the shipped
     # scene.blend share one definition.  Needs track1_config (eye midpoint) set above.

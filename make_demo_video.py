@@ -133,8 +133,8 @@ def video_scene(w, name, kicker, title, notes):
     d = ImageDraw.Draw(base)
     header(d, kicker, title)
     lines(d, 90, 260, notes, size=32, gap=22)
-    d.text((90, 960), "videos/%s.mp4  ·  %d frames @ 25 fps  ·  %.1f s  ·  1024² EEVEE" % (
-        name, len(frames), len(frames) / 25.0), font=font(26), fill=MUTED)
+    d.text((90, 960), "videos/%s.mp4  ·  %d frames @ 25 fps  ·  %.1f s  ·  %d² Cycles" % (
+        name, len(frames), len(frames) / 25.0, frames[0].shape[0]), font=font(26), fill=MUTED)
     for f in frames:
         im = base.copy()
         im.paste(Image.fromarray(f).resize((SIDE, SIDE), Image.LANCZOS), (IMX, IMY))

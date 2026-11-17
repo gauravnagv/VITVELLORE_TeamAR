@@ -22,11 +22,14 @@ REQUIRED = [
     "scene.blend", "expression_timeline.blend", "README.md", "metadata.json",
     "wrapper/eyes.py", "wrapper/motion.py", "wrapper/demo_live.py",
     "verify.py", "build_scene_gnm.py", "polish_look.py", "add_expression_keys.py",
+    "add_wrinkles.py", "add_hair.py", "add_tearline.py", "add_sclera_shading.py",   # imported by the build
     "videos/left.mp4", "videos/right.mp4", "videos/generate.mp4",
     "videos/left_states.json", "videos/right_states.json", "videos/generate_states.json",
 ]
 OPTIONAL_FILES = [
+    "videos/generate_closeup.mp4",
     "bake_skins.py", "make_texture_sets.py", "make_contact_sheet.py", "make_demo_video.py", "record_demo.py",
+    "tools_regen_normal.py", "tools_regen_eye_tiles.py",
     "RUN_DEMO.bat", "VITVellore_AR.pptx",
     "Dockerfile", ".dockerignore", "requirements.txt", "LICENSE",
 ]

@@ -72,8 +72,26 @@ def plan(mode):
     def squint(t0, t1, value, ramp=0.3):
         ev.append(("squint", t0, t1, value, ramp))
 
-    if mode in ("left", "right"):
-        s = -1.0 if mode == "left" else 1.0
+    if mode == "right":
+        # its own choreography (not a mirror of Left): a curious look to the right
+        s = 1.0
+        blink(0.40)
+        fix(0.95, s * 8, -2.0)            # small first glance
+        blink(1.85)                       # gaze-evoked blink with the big shift
+        fix(1.90, s * 25, 3.0)
+        brow(2.0, 3.4, 0.22)
+        squint(2.9, 4.6, 0.25)            # focusing on something
+        fix(2.90, s * 31, -1.0)           # corrective / exploring saccade
+        pupil(2.0, 4.6, 0.2)
+        fix(4.30, s * 22, 7.0)            # glance up-right
+        blink(5.15)
+        fix(5.95, s * 6, 0.0)             # back toward centre
+        fix(6.85, s * 28, -2.0)           # and back to the side
+        blink(7.85)
+        fix(8.35, 0.0, 0.0)               # settle at rest
+        return 9.0, ev
+    if mode == "left":
+        s = -1.0
         blink(0.55)
         fix(1.20, s * 10, 1.0)            # first small glance
         brow(1.1, 2.2, 0.12)
@@ -317,10 +335,10 @@ def _fcurves(ad):
 # --------------------------------------------------------------------------- #
 # Rendering + encoding (Blender's built-in FFmpeg; no extra dependencies)
 # --------------------------------------------------------------------------- #
-def render_frames(frames_dir, res, samples, motion_blur=True):
+def render_frames(frames_dir, res, samples, motion_blur=True, aspect=1.0):
     scn = bpy.context.scene
     os.makedirs(frames_dir, exist_ok=True)
-    scn.render.resolution_x = scn.render.resolution_y = res
+    scn.render.resolution_x, scn.render.resolution_y = int(round(res * aspect / 2)) * 2, res
     scn.render.resolution_percentage = 100
     scn.render.image_settings.file_format = "PNG"
     scn.render.image_settings.color_mode = "RGB"
@@ -336,11 +354,11 @@ def render_frames(frames_dir, res, samples, motion_blur=True):
     bpy.ops.render.render(animation=True)
 
 
-def encode(frames_dir, n, fps, res, out_mp4, caption=None):
+def encode(frames_dir, n, fps, res, out_mp4, caption=None, aspect=1.0):
     files = sorted(f for f in os.listdir(frames_dir) if f.startswith("frame_") and f.endswith(".png"))[:n]
     enc = bpy.data.scenes.new("Encode")
     enc.render.fps = fps
-    enc.render.resolution_x = enc.render.resolution_y = res
+    enc.render.resolution_x, enc.render.resolution_y = int(round(res * aspect / 2)) * 2, res
     enc.render.resolution_percentage = 100
     enc.frame_start, enc.frame_end = 1, len(files)
     se = enc.sequence_editor_create()
@@ -391,12 +409,21 @@ def _parse(argv):
     p.add_argument("--no-blur", action="store_true")
     p.add_argument("--no-caption", action="store_true")
     p.add_argument("--blender", default=None)
+    p.add_argument("--look", default=None, help="Cycles look preset (polish_look.PRESETS), e.g. c8a")
+    p.add_argument("--shot", default="face", choices=["face", "closeup"],
+                   help="face = locked full-face camera (default); closeup = cinematic 16:9 eye close-up")
     return p.parse_args(argv)
 
 
 def main(argv):
     a = _parse(argv)
     a.out = os.path.abspath(a.out)   # Blender resolves bare relative paths against the drive root
+    if a.look:
+        os.environ["SAM_LOOK"] = a.look
+    closeup = a.shot == "closeup"
+    aspect = 16 / 9 if closeup else 1.0
+    if closeup:
+        a.no_caption = True
     eyes.set_engine(a.engine, a.samples)
     if a.textures:
         eyes.set_textures(a.textures)
@@ -404,9 +431,10 @@ def main(argv):
     assert dur <= 15.0, "videos must not exceed 15 s"
     cap = None if a.no_caption else "eyes input: %s" % {"left": "Left", "right": "Right",
                                                            "generate": "Generate Motion"}[a.mode]
-    frames = os.path.join(a.out, "%s_frames" % a.mode)
+    tag = a.mode + ("_closeup" if closeup else "")
+    frames = os.path.join(a.out, "%s_frames" % tag)
     if a.encode_only:
-        encode(frames, len(states), a.fps, a.res, os.path.join(a.out, "%s.mp4" % a.mode), cap)
+        encode(frames, len(states), a.fps, a.res, os.path.join(a.out, "%s.mp4" % tag), cap, aspect)
         return
     bake(states, a.fps)
     with open(os.path.join(_mkdir(a.out), "%s_states.json" % a.mode), "w") as f:
@@ -416,8 +444,12 @@ def main(argv):
         print("[motion] saved Timeline animation ->", a.save_blend, flush=True)
     if a.no_render:
         return
-    render_frames(frames, a.res, a.samples, motion_blur=not a.no_blur)
-    encode(frames, len(states), a.fps, a.res, os.path.join(a.out, "%s.mp4" % a.mode), cap)
+    if closeup:   # after baking: gaze targets were computed with the main camera
+        sys.path.insert(0, eyes.BUNDLE_DIR)
+        import polish_look
+        polish_look.set_closeup_camera()
+    render_frames(frames, a.res, a.samples, motion_blur=not a.no_blur, aspect=aspect)
+    encode(frames, len(states), a.fps, a.res, os.path.join(a.out, "%s.mp4" % tag), cap, aspect)
 
 
 def _mkdir(d):

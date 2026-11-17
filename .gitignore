@@ -17,3 +17,22 @@ videos/v3_*/
 videos/ml3_*/
 videos/*.bat
 videos/render_log*.txt
+
+# deck builder (inputs + intermediates)
+tools_deck/
+
+# 17 Nov: dev backups, older texture builds, intermediate render passes
+scene_pre_*.blend
+scene_hairtest*.blend
+textures_v8*/
+textures_v9_eyes/
+textures_v9_regen_log.txt
+textures_normal_new/
+legacy/*_pre_*.py
+legacy/v7_code/
+look_test.py
+videos/final*/
+videos/v8_preview/
+videos/tear_test/
+videos/fixtest_*/
+videos/*.ps1
