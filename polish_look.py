@@ -87,7 +87,10 @@ CYCLES_FINAL = "c2"
 # background, glossier skin so pores and creases glint, iris relief, eyes-in-focus depth of
 # field, vignette.  c8a = moderate (face fully readable), c8b = dramatic, c8c = Eye-Piece dark.
 _C8_SKIN = {
-    "normal_strength": 1.0,
+    # 0.85 (v11, 17 Nov): at 1.0 the pore normal still read as pebbly where the key rakes the
+    # cheek and in the temple highlight (A/B tools_test_v11.py: shadow-cheek band energy -8..-16 %,
+    # pores kept; 0.70 started to look soft).
+    "normal_strength": 0.85,
     "rough_lo": 0.30, "rough_hi": 0.58,
     "subsurface_weight": 0.60,
     "subsurface_radius": (1.0, 0.38, 0.20),
