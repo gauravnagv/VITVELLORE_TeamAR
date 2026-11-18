@@ -4,6 +4,9 @@
 
 Realistic, programmatically controlled eyes on Google's **GNM v3** head in Blender.
 
+**Demo video and all output videos (Google Drive):** https://drive.google.com/drive/folders/10QTUV_ASYQzRfrDaDwr3dUcDB9cF53Qj?usp=sharing
+(`VITVellore_AR_demo.mp4` is the 92 s demo; `left`, `right`, `generate` and `generate_closeup.mp4` are the track outputs.)
+
 | Deliverable | Where |
 |---|---|
 | Three input videos (Left, Right, Generate Motion), each 15 s or less, 2048², Cycles | `videos/left.mp4`, `videos/right.mp4`, `videos/generate.mp4` |
@@ -13,6 +16,8 @@ Realistic, programmatically controlled eyes on Google's **GNM v3** head in Blend
 | Python render script with the 3 inputs | `wrapper/motion.py` (on top of the `wrapper/eyes.py` API) |
 | Original brief: 10 clockwise renders + metadata, 5-direction check | `renders/frame_00..09.png`, `metadata.json`, `demo/` |
 | Presentation | `VITVellore_AR.pptx` |
+| Demo video (92 s) | `demo/demo_video.mp4`, also on [Google Drive](https://drive.google.com/drive/folders/10QTUV_ASYQzRfrDaDwr3dUcDB9cF53Qj?usp=sharing) |
+| AI disclosure | [`AI_DISCLOSURE.md`](AI_DISCLOSURE.md) |
 
 * **Head model:** GNM v3 (Generative aNthropometric Model, Apache-2.0), with its official UDIM UV layout.
 * **Textures:** 10 photographic texture sets wrapped directly onto the GNM UVs. Each set has skin albedo, pore normal map, roughness, separate left and right irises, cornea, teeth and tongue.
