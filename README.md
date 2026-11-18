@@ -1,6 +1,6 @@
 # Team AR: Track 01, Synthetic Eye Movement & Virtual Camera Rendering
 
-**Samsung PRISM XR Hackathon 2026** · Team **AR** · **VIT Vellore** · Vagicharla Gaurav Nag, Marimamula Akshay
+**Samsung PRISM XR Hackathon 2026** · Team **AR** · **VIT Vellore** · Vagicharla Gaurav Nag ([@gauravnagv](https://github.com/gauravnagv)), Marimamula Akshay ([@Akshay-Guptha](https://github.com/Akshay-Guptha))
 
 Realistic, programmatically controlled eyes on Google's **GNM v3** head in Blender.
 
